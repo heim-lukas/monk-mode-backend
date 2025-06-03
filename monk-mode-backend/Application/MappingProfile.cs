@@ -13,6 +13,16 @@ namespace monk_mode_backend.Application {
             CreateMap<UserTask, TaskDTO>().ReverseMap();
             CreateMap<UserTask, CreateTaskDTO>().ReverseMap();
             CreateMap<UserTask, UpdateTaskDTO>().ReverseMap();
+
+            // Template mappings
+            CreateMap<Template, TemplateDTO>().ReverseMap()
+                .ForMember(dest => dest.TemplateBlocks, opt => opt.Ignore());
+
+            // TemplateBlock mappings
+            CreateMap<TemplateBlock, TemplateBlockDTO>().ReverseMap();
+
+            // DailyStatistics mappings
+            CreateMap<DailyStatistics, DailyStatisticsDTO>().ReverseMap();
         }
     }
 }
