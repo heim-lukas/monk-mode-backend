@@ -24,13 +24,39 @@ namespace monk_mode_backend.Controllers {
 
         // GET /daily-statistics
         [HttpGet]
-        public async Task<IActionResult> GetDailyStatistics([FromQuery] DateTime? date) {
+        public async Task<IActionResult> GetDailyStatistics([FromQuery] DateTime? date, [FromQuery] string? friendId) {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Unauthorized();
 
+            string targetUserId = user.Id;
+
+            // If friendId is provided, verify friendship and use friend's ID
+            if (!string.IsNullOrEmpty(friendId)) {
+                // Check friendship in both directions
+                var friendship = await _dbContext.Friendships
+                    .FirstOrDefaultAsync(f => 
+                        f.Status == "Accepted" && 
+                        ((f.UserId == user.Id && f.FriendId == friendId) || 
+                         (f.UserId == friendId && f.FriendId == user.Id)));
+
+                if (friendship == null) {
+                    // Double check by swapping the IDs
+                    friendship = await _dbContext.Friendships
+                        .FirstOrDefaultAsync(f => 
+                            f.Status == "Accepted" && 
+                            ((f.UserId == friendId && f.FriendId == user.Id) || 
+                             (f.UserId == user.Id && f.FriendId == friendId)));
+
+                    if (friendship == null)
+                        return Forbid("You are not friends with this user.");
+                }
+
+                targetUserId = friendId;
+            }
+
             var query = _dbContext.DailyStatistics
-                .Where(ds => ds.UserId == user.Id);
+                .Where(ds => ds.UserId == targetUserId);
 
             if (date.HasValue) {
                 var startOfDay = date.Value.Date;
